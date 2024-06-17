@@ -62,3 +62,15 @@ export const getHrs = async () => {
         toast.error(error.response.data.message);
     }
 }
+
+export const getProjectManagers = async() => {
+    try {
+        const response = await instance.get('Employee/get-project-managers');
+        return response.data;
+    }
+    catch (error:any){
+        toast.error(error.response.data.message);
+    }
+}
+
+

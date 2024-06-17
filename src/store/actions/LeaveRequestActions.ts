@@ -33,9 +33,9 @@ export const addLeaveRequest = async (leaveRequest: ILeaveRequest) => {
     }
 }
 
-export const updateLeaveRequest = async (id:number, leaveRequest: ILeaveRequest) => {
+export const updateLeaveRequest = async (leaveRequest: ILeaveRequest) => {
     try {
-        const response = await instance.put(`/LeaveRequest/${id}`, leaveRequest);
+        const response = await instance.put(`/LeaveRequest/`, leaveRequest);
         return response.data;
     }
     catch (error:any) {
@@ -49,6 +49,28 @@ export const deleteLeaveRequest = async (id: number) => {
         return response.data;
     }
     catch (error:any) {
+        toast.error(error.response.data.message);
+    }
+}
+
+export const submitLeaveRequest = async (id:number) => {
+    try {
+        const response = await instance.post(`/LeaveRequest/submit-leave-request/${id}`);
+        return response.data;
+    }
+    catch (error:any)
+    {
+        toast.error(error.response.data.message);
+    }
+}
+
+export const cancelLeaveRequest = async (id:number) => {
+    try {
+        const response = await instance.post(`/LeaveRequest/cancel-leave-request/${id}`);
+        return response.data;
+    }
+    catch (error:any)
+    {
         toast.error(error.response.data.message);
     }
 }

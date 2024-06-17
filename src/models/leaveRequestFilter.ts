@@ -5,5 +5,5 @@ export interface ILeaveRequestFilter {
     startDate: Date;
     endDate: Date;
     status: string;
-    reuestNumber: number;
+    requestNumber: number | null;
 }

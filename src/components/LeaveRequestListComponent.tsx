@@ -23,28 +23,42 @@ import {
 } from '@mui/material';
 import {
     Search as SearchIcon,
-    Add as AddIcon
+    Add as AddIcon,
+    Edit as EditIcon,
+    Done as DoneIcon,
+    Cancel as CancelIcon
 } from '@mui/icons-material';
-import { getLeaveRequestsByFilter } from '../store/actions/LeaveRequestActions';
+import {
+    getLeaveRequestsByFilter,
+    submitLeaveRequest,
+    cancelLeaveRequest,
+    updateLeaveRequest
+} from '../store/actions/LeaveRequestActions';
 import { ILeaveRequest } from '../models/leaveRequest';
-import {ILeaveRequestFilter} from '../models/leaveRequestFilter';
+import { ILeaveRequestFilter } from '../models/leaveRequestFilter';
 import LeaveRequestModal from "../modals/AddLeaveRequestModal";
+import { SelectChangeEvent } from '@mui/material/Select';
+import UpdateLeaveRequestModal from "../modals/UpdateLeaveRequestModal";
+
 const currentDate = new Date();
 const defaultStartDate = new Date(currentDate.setMonth(currentDate.getMonth() - 11));
-const defaultEndDate = new Date(currentDate.setMonth(currentDate.getMonth() + 11));
+const defaultEndDate = new Date(currentDate.setMonth(currentDate.getMonth() + 20));
+
 const LeaveRequestListComponent: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [leaveRequests, setLeaveRequests] = useState<ILeaveRequest[]>([]);
     const [filter, setFilter] = useState<ILeaveRequestFilter>({
-        sortBy: 'startDate',
+        sortBy: 'startdate',
         sortAscending: true,
         absenceReason: '',
         startDate: defaultStartDate,
         endDate: defaultEndDate,
         status: '',
-        reuestNumber: 0
+        requestNumber: null
     });
     const [isLoading, setIsLoading] = useState(false);
+    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState<ILeaveRequest | null>(null);
 
     useEffect(() => {
         fetchLeaveRequests();
@@ -62,17 +76,41 @@ const LeaveRequestListComponent: React.FC = () => {
         }
     };
 
-    // Функция для обработки поиска по номеру запроса
     const handleSearchByRequestNumber = (event: React.ChangeEvent<HTMLInputElement>) => {
-        // Обработка изменения значения поля поиска
+        setFilter({ ...filter, requestNumber: event.target.value ? parseInt(event.target.value) : null });
     };
 
-    // Функция для открытия формы создания нового запроса
-    const handleOpenNewRequestForm = () => {
-        // Обработка открытия формы создания нового запроса
+    const handleSortRequest = (property: keyof ILeaveRequest) => {
+        const isAscending = filter.sortBy === property && filter.sortAscending;
+        setFilter({ ...filter, sortBy: property, sortAscending: !isAscending });
     };
 
-    // Функции обработки сортировки, фильтрации и т. д. можно добавить здесь
+    const handleFilterChange = (event: SelectChangeEvent<string>) => {
+        const name = event.target.name as keyof typeof filter;
+        setFilter({ ...filter, [name]: event.target.value });
+    };
+
+    const handleSubmitRequest = async (id: number) => {
+        await submitLeaveRequest(id);
+        fetchLeaveRequests();
+    };
+
+    const handleCancelRequest = async (id: number) => {
+        await cancelLeaveRequest(id);
+        fetchLeaveRequests();
+    };
+
+    const handleUpdateRequest = (request: ILeaveRequest) => {
+        setSelectedRequest(request);
+        setIsUpdateModalOpen(true);
+    };
+
+    const handleUpdateLeaveRequest = async (updatedRequest: ILeaveRequest) => {
+        await updateLeaveRequest(updatedRequest);
+        fetchLeaveRequests();
+        setIsUpdateModalOpen(false);
+    };
+
 
     return (
         <Box sx={{ width: '100%', padding: 2 }}>
@@ -105,6 +143,51 @@ const LeaveRequestListComponent: React.FC = () => {
                     }}
                 />
             </Toolbar>
+            <Box sx={{ mb: 2 }}>
+                <FormControl sx={{ mr: 2, minWidth: 120 }}>
+                    <InputLabel>Absence Reason</InputLabel>
+                    <Select
+                        value={filter.absenceReason}
+                        onChange={(event) => handleFilterChange(event as SelectChangeEvent<string>)}
+                        name="absenceReason"
+                    >
+                        <MenuItem value=""><em>None</em></MenuItem>
+                        <MenuItem value="Sick Leave">Sick Leave</MenuItem>
+                        <MenuItem value="Vacation">Vacation</MenuItem>
+                        <MenuItem value="Personal">Personal</MenuItem>
+                    </Select>
+                </FormControl>
+                <FormControl sx={{ mr: 2, minWidth: 120 }}>
+                    <InputLabel>Status</InputLabel>
+                    <Select
+                        value={filter.status}
+                        onChange={(event) => handleFilterChange(event as SelectChangeEvent<string>)}
+                        name="status"
+                    >
+                        <MenuItem value=""><em>None</em></MenuItem>
+                        <MenuItem value="Submitted">Submitted</MenuItem>
+                        <MenuItem value="Canceled">Canceled</MenuItem>
+                        <MenuItem value="Approved">Approved</MenuItem>
+                        <MenuItem value="Rejected">Rejected</MenuItem>
+                    </Select>
+                </FormControl>
+                <TextField
+                    label="Start Date"
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    value={filter.startDate?.toISOString().split('T')[0] || ''}
+                    onChange={(e) => setFilter({ ...filter, startDate: new Date(e.target.value) })}
+                    sx={{ mr: 2 }}
+                />
+                <TextField
+                    label="End Date"
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    value={filter.endDate?.toISOString().split('T')[0] || ''}
+                    onChange={(e) => setFilter({ ...filter, endDate: new Date(e.target.value) })}
+                    sx={{ mr: 2 }}
+                />
+            </Box>
             {isLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
                     <CircularProgress />
@@ -113,17 +196,83 @@ const LeaveRequestListComponent: React.FC = () => {
                 <TableContainer component={Paper}>
                     <Table>
                         <TableHead>
-                            {/* Заголовки таблицы */}
+                            <TableRow>
+                                <TableCell sortDirection={filter.sortBy === 'employeeName' ? (filter.sortAscending ? 'asc' : 'desc') : false}>
+                                    <TableSortLabel
+                                        active={filter.sortBy === 'employeeName'}
+                                        direction={filter.sortBy === 'employeeName' ? (filter.sortAscending ? 'asc' : 'desc') : 'asc'}
+                                        onClick={() => handleSortRequest('employeeName')}
+                                    >
+                                        Employee Name
+                                    </TableSortLabel>
+                                </TableCell>
+                                <TableCell sortDirection={filter.sortBy === 'startDate' ? (filter.sortAscending ? 'asc' : 'desc') : false}>
+                                    <TableSortLabel
+                                        active={filter.sortBy === 'startDate'}
+                                        direction={filter.sortBy === 'startDate' ? (filter.sortAscending ? 'asc' : 'desc') : 'asc'}
+                                        onClick={() => handleSortRequest('startDate')}
+                                    >
+                                        Start Date
+                                    </TableSortLabel>
+                                </TableCell>
+                                <TableCell sortDirection={filter.sortBy === 'endDate' ? (filter.sortAscending ? 'asc' : 'desc') : false}>
+                                    <TableSortLabel
+                                        active={filter.sortBy === 'endDate'}
+                                        direction={filter.sortBy === 'endDate' ? (filter.sortAscending ? 'asc' : 'desc') : 'asc'}
+                                        onClick={() => handleSortRequest('endDate')}
+                                    >
+                                        End Date
+                                    </TableSortLabel>
+                                </TableCell>
+                                <TableCell>
+                                    Absence Reason
+                                </TableCell>
+                                <TableCell>
+                                    Status
+                                </TableCell>
+                                <TableCell>
+                                    Actions
+                                </TableCell>
+                            </TableRow>
                         </TableHead>
                         <TableBody>
                             {leaveRequests.map((request) => (
                                 <TableRow key={request.id}>
-                                    {/* Данные строки таблицы */}
+                                    <TableCell>{request.employeeName}</TableCell>
+                                    <TableCell>{new Date(request.startDate).toLocaleDateString()}</TableCell>
+                                    <TableCell>{new Date(request.endDate).toLocaleDateString()}</TableCell>
+                                    <TableCell>{request.absenceReason}</TableCell>
+                                    <TableCell>{request.status}</TableCell>
+                                    <TableCell>
+                                        <Tooltip title="Update">
+                                            <IconButton onClick={() => handleUpdateRequest(request)}>
+                                                <EditIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Submit">
+                                            <IconButton onClick={() => handleSubmitRequest(request.id!)}>
+                                                <DoneIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Cancel">
+                                            <IconButton onClick={() => handleCancelRequest(request.id!)}>
+                                                <CancelIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
                 </TableContainer>
+            )}
+            {selectedRequest && (
+                <UpdateLeaveRequestModal
+                    open={isUpdateModalOpen}
+                    onClose={() => setIsUpdateModalOpen(false)}
+                    onUpdate={handleUpdateLeaveRequest}
+                    request={selectedRequest}
+                />
             )}
         </Box>
     );
