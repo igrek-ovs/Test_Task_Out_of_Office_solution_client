@@ -6,4 +6,5 @@ export interface IEmployeeFilter {
     outOfOfficeBalanceLeft: number;
     outOfOfficeBalanceRight: number;
     searchByName:string;
+    position?: string;
 }

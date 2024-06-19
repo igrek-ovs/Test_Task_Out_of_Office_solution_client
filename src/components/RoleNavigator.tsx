@@ -19,7 +19,7 @@ const RoleNavigator: React.FC<RoleNavigatorProps> = ({ role }) => {
     };
 
     const options: { [key: string]: Option[] } = {
-        HR: [
+        'HR Manager': [
             { label: 'Employees', path: '/lists/employees' },
             { label: 'Projects', path: '/lists/projects' },
             { label: 'Leave Requests', path: '/lists/leave-requests' },
@@ -32,8 +32,8 @@ const RoleNavigator: React.FC<RoleNavigatorProps> = ({ role }) => {
             { label: 'Approval Requests', path: '/lists/approval-requests' },
         ],
         Employee: [
-            { label: 'My Projects', path: '/lists/my-projects' },
-            { label: 'My Leave Requests', path: '/lists/my-leave-requests' },
+            { label: 'My Projects', path: '/lists/projects' },
+            { label: 'My Leave Requests', path: '/lists/leave-requests' },
         ],
         Admin: [
             { label: 'Employees', path: '/lists/employees' },

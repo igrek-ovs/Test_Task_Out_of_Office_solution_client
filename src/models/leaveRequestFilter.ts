@@ -6,4 +6,5 @@ export interface ILeaveRequestFilter {
     endDate: Date;
     status: string;
     requestNumber: number | null;
+    employeeId: number | null;
 }

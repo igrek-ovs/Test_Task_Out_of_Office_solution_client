@@ -39,12 +39,14 @@ import { ILeaveRequestFilter } from '../models/leaveRequestFilter';
 import LeaveRequestModal from "../modals/AddLeaveRequestModal";
 import { SelectChangeEvent } from '@mui/material/Select';
 import UpdateLeaveRequestModal from "../modals/UpdateLeaveRequestModal";
+import LeaveRequestDetailsModal from "../modals/LeaveRequestDetailsModal";
 
 const currentDate = new Date();
 const defaultStartDate = new Date(currentDate.setMonth(currentDate.getMonth() - 11));
 const defaultEndDate = new Date(currentDate.setMonth(currentDate.getMonth() + 20));
 
 const LeaveRequestListComponent: React.FC = () => {
+    const role = localStorage.getItem('role');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [leaveRequests, setLeaveRequests] = useState<ILeaveRequest[]>([]);
     const [filter, setFilter] = useState<ILeaveRequestFilter>({
@@ -54,11 +56,14 @@ const LeaveRequestListComponent: React.FC = () => {
         startDate: defaultStartDate,
         endDate: defaultEndDate,
         status: '',
-        requestNumber: null
+        requestNumber: null,
+        employeeId: role==='Employee' ? parseInt(localStorage.getItem('id')!) : null
     });
     const [isLoading, setIsLoading] = useState(false);
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<ILeaveRequest | null>(null);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [selectedRequestDetails, setSelectedRequestDetails] = useState<ILeaveRequest | null>(null);
 
     useEffect(() => {
         fetchLeaveRequests();
@@ -74,6 +79,11 @@ const LeaveRequestListComponent: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleOpenRequestDetailsModal = (request: ILeaveRequest) => {
+        setSelectedRequestDetails(request);
+        setIsDetailsModalOpen(true);
     };
 
     const handleSearchByRequestNumber = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,18 +139,20 @@ const LeaveRequestListComponent: React.FC = () => {
                         ),
                     }}
                 />
+                {role === 'Admin' || role === 'Employee' && (
+                    <>
                 <IconButton
                     onClick={() => setIsModalOpen(true)}
                     sx={{ ml: 2 }}
                 >
                     <AddIcon />
                 </IconButton>
+                    </>
+                )}
                 <LeaveRequestModal
                     open={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
-                    onAdd={(newRequest) => {
-                        setLeaveRequests([...leaveRequests, newRequest]); // Обновляем список запросов после добавления нового
-                    }}
+                    onAdd={fetchLeaveRequests}
                 />
             </Toolbar>
             <Box sx={{ mb: 2 }}>
@@ -165,6 +177,7 @@ const LeaveRequestListComponent: React.FC = () => {
                         name="status"
                     >
                         <MenuItem value=""><em>None</em></MenuItem>
+                        <MenuItem value="New">New</MenuItem>
                         <MenuItem value="Submitted">Submitted</MenuItem>
                         <MenuItem value="Canceled">Canceled</MenuItem>
                         <MenuItem value="Approved">Approved</MenuItem>
@@ -237,29 +250,39 @@ const LeaveRequestListComponent: React.FC = () => {
                         </TableHead>
                         <TableBody>
                             {leaveRequests.map((request) => (
-                                <TableRow key={request.id}>
+                                <TableRow key={request.id} onClick={(event) => {
+                                    const target = event.target as HTMLElement;
+                                    if (!target.closest('button')) { // Проверяем, что не было клика по кнопке
+                                        handleOpenRequestDetailsModal(request);
+                                    }
+                                }}>
                                     <TableCell>{request.employeeName}</TableCell>
                                     <TableCell>{new Date(request.startDate).toLocaleDateString()}</TableCell>
                                     <TableCell>{new Date(request.endDate).toLocaleDateString()}</TableCell>
                                     <TableCell>{request.absenceReason}</TableCell>
                                     <TableCell>{request.status}</TableCell>
                                     <TableCell>
-                                        <Tooltip title="Update">
-                                            <IconButton onClick={() => handleUpdateRequest(request)}>
-                                                <EditIcon />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="Submit">
-                                            <IconButton onClick={() => handleSubmitRequest(request.id!)}>
-                                                <DoneIcon />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="Cancel">
-                                            <IconButton onClick={() => handleCancelRequest(request.id!)}>
-                                                <CancelIcon />
-                                            </IconButton>
-                                        </Tooltip>
+                                        {role === 'Admin' || role === 'Employee' && (
+                                            <>
+                                                <Tooltip title="Update">
+                                                    <IconButton onClick={() => handleUpdateRequest(request)}>
+                                                        <EditIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Submit">
+                                                    <IconButton onClick={() => handleSubmitRequest(request.id!)}>
+                                                        <DoneIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Cancel">
+                                                    <IconButton onClick={() => handleCancelRequest(request.id!)}>
+                                                        <CancelIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </>
+                                        )}
                                     </TableCell>
+
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -272,6 +295,13 @@ const LeaveRequestListComponent: React.FC = () => {
                     onClose={() => setIsUpdateModalOpen(false)}
                     onUpdate={handleUpdateLeaveRequest}
                     request={selectedRequest}
+                />
+            )}
+            {selectedRequestDetails && (
+                <LeaveRequestDetailsModal
+                    open={isDetailsModalOpen}
+                    onClose={() => setIsDetailsModalOpen(false)}
+                    request={selectedRequestDetails}
                 />
             )}
         </Box>

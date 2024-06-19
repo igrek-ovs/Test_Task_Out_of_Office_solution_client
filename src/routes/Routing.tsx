@@ -5,6 +5,7 @@ import RoleNavigator from "../components/RoleNavigator";
 import EmployeeListComponent from "../components/EmployeeListComponent";
 import LeaveRequestListComponent from "../components/LeaveRequestListComponent";
 import ProjectListComponent from "../components/ProjectListComponent";
+import ApprovalRequestsComponent from "../components/ApprovalRequestsComponent";
 
 // Импортируйте другие компоненты списка аналогичным образом
 
@@ -20,7 +21,7 @@ const Routing = () => {
                 {/* Добавьте маршруты для других списков */}
                  <Route path="/lists/projects" element={<ProjectListComponent />} />
                  <Route path="/lists/leave-requests" element={<LeaveRequestListComponent />} />
-                {/* <Route path="/lists/approval-requests" element={<ApprovalRequestList />} /> */}
+                 <Route path="/lists/approval-requests" element={<ApprovalRequestsComponent />} />
             </Routes>
         </Router>
     );

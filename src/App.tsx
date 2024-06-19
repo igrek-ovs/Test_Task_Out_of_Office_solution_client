@@ -3,6 +3,7 @@ import logo from './logo.svg';
 import './App.css';
 import {ThemeProvider} from "@mui/material";
 import {ToastContainer} from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 import {theme} from "./theme";
 import Routing from "./routes/Routing";
 import { AuthProvider } from './components/AuthProvider';

@@ -20,7 +20,7 @@ import {
     MenuItem,
     FormControl,
     InputLabel,
-    SelectChangeEvent
+    SelectChangeEvent, Popover,
 } from '@mui/material';
 import {
     Search as SearchIcon,
@@ -28,16 +28,28 @@ import {
     Edit as EditIcon,
     Delete as DeleteIcon,
     ToggleOn as ToggleOnIcon,
-    ToggleOff as ToggleOffIcon
+    ToggleOff as ToggleOffIcon,
+    PersonAdd as PersonAddIcon,
+    PhotoCamera as PhotoCameraIcon
 } from '@mui/icons-material';
-import { getEmployeesByFilter, addEmployee, updateEmployee, deleteEmployee, toggleDeactivateEmployee } from '../store/actions/EmployeeActions';
+import {
+    getEmployeesByFilter,
+    addEmployee,
+    updateEmployee,
+    deleteEmployee,
+    toggleDeactivateEmployee,
+    assignEmployeeToProject, uploadPhoto
+} from '../store/actions/EmployeeActions';
 import { IEmployeeFilter } from '../models/employeeFilter';
 import { IEmployee } from '../models/employee';
 import { toast } from 'react-toastify';
 import AddEmployeeModal from '../modals/AddEmployeeModal';
 import EditEmployeeModal from "../modals/EditEmployeeModal";
+import EmployeeDetailsModal from "../modals/EmployeeDetailsModal";
 
 const EmployeeListComponent: React.FC = () => {
+    const role = localStorage.getItem('role');
+    const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
     const [employees, setEmployees] = useState<IEmployee[]>([]);
     const [filter, setFilter] = useState<IEmployeeFilter>({
         sortBy: 'fullName',
@@ -46,11 +58,20 @@ const EmployeeListComponent: React.FC = () => {
         isActive: undefined,
         outOfOfficeBalanceLeft: 0,
         outOfOfficeBalanceRight: 365,
-        searchByName: ''
+        searchByName: '',
+        position: (role === 'Admin') ? '' : 'Employee'
     });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<IEmployee | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [projectId, setProjectId] = useState<number | string>('');
+    const [selectedEmployee, setSelectedEmployee] = useState<number | null>(null);
+    const [selectedEmployeeDetails, setSelectedEmployeeDetails] = useState<IEmployee | null>(null);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+
+
     const fetchEmployees = async () => {
         try {
             const data = await getEmployeesByFilter(filter);
@@ -63,6 +84,38 @@ const EmployeeListComponent: React.FC = () => {
     useEffect(() => {
         fetchEmployees();
     }, [filter]);
+
+
+    const handlePopoverOpen = (event: React.MouseEvent<HTMLElement>, employeeId: number) => {
+        setAnchorEl(event.currentTarget);
+        setSelectedEmployee(employeeId);
+    };
+
+    const handleRowClick = (employee: IEmployee) => {
+        setSelectedEmployeeDetails(employee);
+        setIsDetailsModalOpen(true);
+    };
+
+
+    const handlePhotoChange =async (event: React.ChangeEvent<HTMLInputElement>, employeeId:number) => {
+        if (event.target.files && event.target.files.length > 0) {
+            setSelectedPhoto(event.target.files[0]);
+            await uploadPhoto(employeeId, event.target.files[0]);
+        }
+    };
+
+    const handlePopoverClose = () => {
+        setAnchorEl(null);
+        setSelectedEmployee(null);
+    };
+
+    const handleAssignProject = async () => {
+        if (selectedEmployee && projectId) {
+            await assignEmployeeToProject(selectedEmployee, Number(projectId));
+            handlePopoverClose();
+        }
+    };
+
 
     const handleSort = (property: keyof IEmployee) => {
         const isAscending = filter.sortBy === property && filter.sortAscending;
@@ -171,6 +224,7 @@ const EmployeeListComponent: React.FC = () => {
                         ),
                     }}
                 />
+                {(role === 'Admin' || role === 'HR Manager') && (
                 <Button
                     variant="contained"
                     color="primary"
@@ -179,7 +233,7 @@ const EmployeeListComponent: React.FC = () => {
                     sx={{ ml: 2 }}
                 >
                     Add Employee
-                </Button>
+                </Button>)}
             </Toolbar>
             <Box sx={{ display: 'flex', mb: 2 }}>
                 <FormControl sx={{ mr: 2, minWidth: 120 }}>
@@ -268,28 +322,52 @@ const EmployeeListComponent: React.FC = () => {
                     </TableHead>
                     <TableBody>
                         {employees.map((employee) => (
-                            <TableRow key={employee.id}>
+                            <TableRow key={employee.id} onClick={(event) => {
+                                const target = event.target as HTMLElement;
+                                if (!target.closest('button')) { // Проверяем, что не было клика по кнопке
+                                    handleRowClick(employee);
+                                }
+                            }}>
                                 <TableCell>{employee.fullName}</TableCell>
                                 <TableCell>{employee.subdivision}</TableCell>
                                 <TableCell>{employee.position}</TableCell>
                                 <TableCell>{employee.isActive ? 'Active' : 'Inactive'}</TableCell>
                                 <TableCell>{employee.outOfOfficeBalance}</TableCell>
                                 <TableCell align="center">
-                                    <Tooltip title="Edit">
+                                    {(role === 'Admin' || role === 'HR Manager') && (<Tooltip title="Edit">
                                         <IconButton onClick={() => handleEditEmployee(employee)}>
                                             <EditIcon />
                                         </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="Delete">
+                                    </Tooltip>)}
+                                    {(role === 'Admin') && (<Tooltip title="Delete">
                                         <IconButton onClick={() => handleDeleteEmployee(employee.id)}>
-                                            <DeleteIcon />
+                                            <DeleteIcon/>
                                         </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title={employee.isActive ? "Deactivate" : "Activate"}>
+                                    </Tooltip>)}
+                                    {(role === 'Admin' || role === 'HR Manager') && (<Tooltip title={employee.isActive ? "Deactivate" : "Activate"}>
                                         <IconButton onClick={() => handleToggleDeactivateEmployee(employee.id)}>
                                             {employee.isActive ? <ToggleOffIcon /> : <ToggleOnIcon />}
                                         </IconButton>
+                                    </Tooltip>)}
+                                    {role === 'Project Manager' && (
+                                        <Tooltip title="Assign to Project">
+                                            <IconButton onClick={(event) => handlePopoverOpen(event, employee.id)}>
+                                                <PersonAddIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                    )}
+                                    <Tooltip title="Upload Photo">
+                                        <IconButton component="label">
+                                            <PhotoCameraIcon />
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                hidden
+                                                onChange={(event) => handlePhotoChange(event, employee.id)}
+                                            />
+                                        </IconButton>
                                     </Tooltip>
+
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -309,7 +387,41 @@ const EmployeeListComponent: React.FC = () => {
                 onClose={() => setIsModalOpen(false)}
                 onAdd={handleAddEmployee}
             />
+            <EmployeeDetailsModal
+                open={isDetailsModalOpen}
+                onClose={() => setIsDetailsModalOpen(false)}
+                employee={selectedEmployeeDetails}
+            />
+
+            <Popover
+                open={Boolean(anchorEl)}
+                anchorEl={anchorEl}
+                onClose={handlePopoverClose}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center',
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'center',
+                }}
+            >
+                <Box sx={{ p: 2 }}>
+                    <Typography variant="h6">Assign to Project</Typography>
+                    <TextField
+                        label="Project ID"
+                        value={projectId}
+                        onChange={(e) => setProjectId(e.target.value)}
+                        type="number"
+                        fullWidth
+                        margin="normal"
+                    />
+                    <Button variant="contained" onClick={handleAssignProject}>Assign</Button>
+                </Box>
+            </Popover>
+
         </Box>
+
     );
 };
 

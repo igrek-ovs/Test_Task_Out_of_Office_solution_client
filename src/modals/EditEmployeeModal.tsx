@@ -21,6 +21,7 @@ interface EditEmployeeModalProps {
 }
 
 const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ open, onClose, onSave, employee }) => {
+    const role = localStorage.getItem('role');
     const [formData, setFormData] = useState<IEmployee>({
         id: 0,
         fullName: '',

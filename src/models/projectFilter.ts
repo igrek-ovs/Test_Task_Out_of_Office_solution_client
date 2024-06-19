@@ -7,4 +7,5 @@ export interface IProjectFilter
     startDateTo:Date;
     status:boolean;
     projectNumber:number | null;
+    assignedEmployeeId:number | null;
 }

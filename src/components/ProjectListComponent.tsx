@@ -22,11 +22,20 @@ import {
     InputLabel,
     Button, SelectChangeEvent
 } from '@mui/material';
-import { Search as SearchIcon, Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import {deleteProject, getProjectsByFilter} from '../store/actions/ProjectActions';
+import {
+    Search as SearchIcon,
+    Add as AddIcon,
+    Edit as EditIcon,
+    Delete as DeleteIcon,
+    ToggleOff as ToggleOffIcon, ToggleOn as ToggleOnIcon
+} from '@mui/icons-material';
+import {deactivateProject, deleteProject, getProjectsByFilter} from '../store/actions/ProjectActions';
 import { IProject } from '../models/project';
 import { IProjectFilter } from '../models/projectFilter';
 import ProjectModal from "../modals/ProjectModal";
+import ProjectModalDetails from "../modals/ProjectModalDetails";
+import {toggleDeactivateEmployee} from "../store/actions/EmployeeActions";
+import {toast} from "react-toastify";
 
 const currentDate = new Date();
 const defaultStartDate = new Date(currentDate.setMonth(currentDate.getMonth() - 11));
@@ -35,6 +44,8 @@ const defaultEndDate = new Date(currentDate.setMonth(currentDate.getMonth() + 20
 const projectTypes = ['Development', 'Research', 'Marketing', 'Design', 'Consulting'];
 
 const ProjectListComponent: React.FC = () => {
+    const role = localStorage.getItem('role');
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [projects, setProjects] = useState<IProject[] | null>(null);
     const [filter, setFilter] = useState<IProjectFilter>({
@@ -44,7 +55,8 @@ const ProjectListComponent: React.FC = () => {
         startDateFrom: defaultStartDate,
         startDateTo: defaultEndDate,
         status: true,
-        projectNumber: null
+        projectNumber: null,
+        assignedEmployeeId:role==='Employee' ? parseInt(localStorage.getItem('id')!) : null
     });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -68,8 +80,27 @@ const ProjectListComponent: React.FC = () => {
         }
     };
 
+    const handleOpenProjectDetailsModal = (project: IProject) => {
+        setSelectedProject(project);
+        setIsDetailsModalOpen(true);
+    };
+
+    const handleCloseProjectDetailsModal = () => {
+        setSelectedProject(null);
+        setIsDetailsModalOpen(false);
+    };
+
     const handleSearchByProjectNumber = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFilter({ ...filter, projectNumber: event.target.value ? Number(event.target.value) : null });
+    };
+
+    const handleDeactivateProject = async (id: number) => {
+        try {
+            await deactivateProject(id);
+            fetchProjects();
+        } catch (error) {
+            toast.error('Error deactivating project');
+        }
     };
 
     const handleOpenNewProjectForm = () => {
@@ -117,16 +148,25 @@ const ProjectListComponent: React.FC = () => {
                         ),
                     }}
                 />
+                {role === 'Admin' || role === 'Project Manager' && (
+                    <>
                 <IconButton
                     onClick={handleOpenNewProjectForm}
                     sx={{ ml: 2 }}
                 >
                     <AddIcon />
                 </IconButton>
+                    </>
+                )}
                 <ProjectModal
                     open={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     onSave={handleSaveProject}
+                    project={selectedProject}
+                />
+                <ProjectModalDetails
+                    open={isDetailsModalOpen}
+                    onClose={() => setIsDetailsModalOpen(false)}
                     project={selectedProject}
                 />
             </Toolbar>
@@ -232,7 +272,12 @@ const ProjectListComponent: React.FC = () => {
                         </TableHead>
                         <TableBody>
                             {projects.map((project) => (
-                                <TableRow key={project.id}>
+                                <TableRow key={project.id} onClick={(event) => {
+                                    const target = event.target as HTMLElement;
+                                    if (!target.closest('button')) { // Проверяем, что не было клика по кнопке
+                                        handleOpenProjectDetailsModal(project);
+                                    }
+                                }}>
                                     <TableCell>{project.id}</TableCell>
                                     <TableCell>{project.projectType}</TableCell>
                                     <TableCell>{new Date(project.startDate).toLocaleDateString()}</TableCell>
@@ -240,6 +285,9 @@ const ProjectListComponent: React.FC = () => {
                                     <TableCell>{project.projectManagerName}</TableCell>
                                     <TableCell>{project.status ? 'Active' : 'Inactive'}</TableCell>
                                     <TableCell>
+
+                                            {role === 'Admin' || role === 'Project Manager' && (
+                                                <>
                                         <Tooltip title="Edit">
                                             <IconButton onClick={() => handleOpenEditProjectForm(project)}>
                                                 <EditIcon />
@@ -250,6 +298,13 @@ const ProjectListComponent: React.FC = () => {
                                                 <DeleteIcon />
                                             </IconButton>
                                         </Tooltip>
+                                        <Tooltip title="Deactivate">
+                                            <IconButton onClick={() => handleDeactivateProject(project.id)}>
+                                                {project.status ? <ToggleOffIcon /> : <ToggleOnIcon />}
+                                            </IconButton>
+                                        </Tooltip>
+                                                </>
+                                            )}
                                     </TableCell>
                                 </TableRow>
                             ))}

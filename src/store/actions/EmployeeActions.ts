@@ -73,4 +73,40 @@ export const getProjectManagers = async() => {
     }
 }
 
+export const getUserRole = async(fullName:string, position:string) => {
+    try {
+        const response = await instance.get(`Employee/get-user-role/`, {params: {fullName, position} });
+        return response.data;
+    }
+    catch (error:any){
+        toast.error(error.response.data.message);
+    }
+}
 
+export const assignEmployeeToProject = async(employeeId:number, projectId:number) => {
+    try {
+        const response = await instance.post(`Employee/assign-to-project/`, null, {params: {employeeId, projectId}});
+        return response.data;
+    }
+    catch (error:any){
+        toast.error(error.response.data.message);
+    }
+}
+
+
+export const uploadPhoto = async (employeeId: number, photo: File) => {
+    try {
+        const formData = new FormData();
+        formData.append('photo', photo);
+
+        const response = await instance.post(`Employee/upload-photo/${employeeId}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        return response.data;
+    } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Failed to upload photo');
+    }
+}
