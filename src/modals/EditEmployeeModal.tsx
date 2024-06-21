@@ -82,7 +82,6 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ open, onClose, on
                     >
                         <MenuItem value="HR">HR</MenuItem>
                         <MenuItem value="Engineering">Engineering</MenuItem>
-                        {/* Add more subdivisions as needed */}
                     </Select>
                 </FormControl>
                 <FormControl fullWidth margin="normal">
@@ -97,26 +96,6 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ open, onClose, on
                         <MenuItem value="Project Manager">Project Manager</MenuItem>
                     </Select>
                 </FormControl>
-                {/*<FormControl fullWidth margin="normal">*/}
-                {/*    <InputLabel>Status</InputLabel>*/}
-                {/*    <Select*/}
-                {/*        name="isActive"*/}
-                {/*        value={formData.isActive ? 'Active' : 'Inactive'}*/}
-                {/*        onChange={handleSelectChange}*/}
-                {/*    >*/}
-                {/*        <MenuItem value="Active">Active</MenuItem>*/}
-                {/*        <MenuItem value="Inactive">Inactive</MenuItem>*/}
-                {/*    </Select>*/}
-                {/*</FormControl>*/}
-                {/*<TextField*/}
-                {/*    label="Out of Office Balance"*/}
-                {/*    name="outOfOfficeBalance"*/}
-                {/*    type="number"*/}
-                {/*    value={formData.outOfOfficeBalance}*/}
-                {/*    onChange={handleChange}*/}
-                {/*    fullWidth*/}
-                {/*    margin="normal"*/}
-                {/*/>*/}
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
                     <Button onClick={onClose} sx={{ marginRight: 1 }}>
                         Cancel

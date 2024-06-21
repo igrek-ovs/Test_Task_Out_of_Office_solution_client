@@ -1,5 +1,4 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 import {ThemeProvider} from "@mui/material";
 import {ToastContainer} from "react-toastify";

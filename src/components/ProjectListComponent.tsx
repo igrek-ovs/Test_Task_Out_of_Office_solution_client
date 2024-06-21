@@ -34,7 +34,6 @@ import { IProject } from '../models/project';
 import { IProjectFilter } from '../models/projectFilter';
 import ProjectModal from "../modals/ProjectModal";
 import ProjectModalDetails from "../modals/ProjectModalDetails";
-import {toggleDeactivateEmployee} from "../store/actions/EmployeeActions";
 import {toast} from "react-toastify";
 
 const currentDate = new Date();
@@ -274,7 +273,7 @@ const ProjectListComponent: React.FC = () => {
                             {projects.map((project) => (
                                 <TableRow key={project.id} onClick={(event) => {
                                     const target = event.target as HTMLElement;
-                                    if (!target.closest('button')) { // Проверяем, что не было клика по кнопке
+                                    if (!target.closest('button')) {
                                         handleOpenProjectDetailsModal(project);
                                     }
                                 }}>

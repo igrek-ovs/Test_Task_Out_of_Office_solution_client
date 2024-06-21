@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { addLeaveRequest } from '../store/actions/LeaveRequestActions';
 import { ILeaveRequest } from '../models/leaveRequest';
+import {toast} from "react-toastify";
 
 interface LeaveRequestModalProps {
     open: boolean;
@@ -23,11 +24,11 @@ interface LeaveRequestModalProps {
 
 const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, onAdd }) => {
     const [leaveRequest, setLeaveRequest] = useState<ILeaveRequest>({
-        employeeId: 0, // Идентификатор сотрудника
-        absenceReason: '', // Причина отсутствия
-        startDate: new Date(), // Дата начала
-        endDate: new Date(), // Дата окончания
-        comment: '' // Комментарий
+        employeeId: 0,
+        absenceReason: '',
+        startDate: new Date(),
+        endDate: new Date(),
+        comment: ''
     });
 
     const absenceReasons = ['Vacation', 'Sick leave', 'Personal day', 'Other'];
@@ -61,7 +62,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ open, onClose, on
             onAdd(leaveRequest);
             onClose();
         } catch (error) {
-            // Handle error
+            toast.error('Error adding leave request');
         }
     };
 

@@ -110,3 +110,17 @@ export const uploadPhoto = async (employeeId: number, photo: File) => {
         toast.error(error.response?.data?.message || 'Failed to upload photo');
     }
 }
+
+export const getPhoto = async (employeeId: number): Promise<Blob> => {
+    try {
+        const response = await instance.get(`Employee/${employeeId}/photo`, {
+            responseType: 'blob' // Ensure the response type is 'blob'
+        });
+        console.log('Photo response:', response);
+        return response.data;
+    } catch (error: any) {
+        console.error('Error fetching photo from server:', error);
+        toast.error(error.response?.data?.message || 'Failed to get photo');
+        throw error;
+    }
+};

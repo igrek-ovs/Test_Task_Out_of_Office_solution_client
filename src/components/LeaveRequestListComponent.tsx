@@ -252,7 +252,7 @@ const LeaveRequestListComponent: React.FC = () => {
                             {leaveRequests.map((request) => (
                                 <TableRow key={request.id} onClick={(event) => {
                                     const target = event.target as HTMLElement;
-                                    if (!target.closest('button')) { // Проверяем, что не было клика по кнопке
+                                    if (!target.closest('button')) {
                                         handleOpenRequestDetailsModal(request);
                                     }
                                 }}>

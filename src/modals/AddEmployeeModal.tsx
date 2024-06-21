@@ -31,7 +31,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ open, onClose, onAd
         fullName: '',
         subdivision: '',
         position: '',
-        peoplePartnerId: 0, // Change to number
+        peoplePartnerId: 0,
         photo: null,
         outOfOfficeBalance: 0,
         isActive: true,
@@ -69,7 +69,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ open, onClose, onAd
 
     const handleSubmit = async () => {
         try {
-            await addEmployee(employee); // Отправка данных о сотруднике на сервер
+            await addEmployee(employee);
             toast.success('Employee added successfully');
             onClose();
         } catch (error) {
@@ -98,9 +98,9 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ open, onClose, onAd
                     label="Position"
                     name="position"
                     fullWidth
-                    select // Добавим атрибут select для использования как выпадающий список
+                    select
                     value={employee.position}
-                    onChange={handleChangeTextField} // Изменение будет обработано в функции handleChangeTextField
+                    onChange={handleChangeTextField}
                 >
                     {positions.map((position) => (
                         <MenuItem key={position} value={position}>

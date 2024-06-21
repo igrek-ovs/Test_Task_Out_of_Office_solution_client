@@ -1,7 +1,9 @@
-import React from 'react';
-import { Modal, Box, Typography, IconButton } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Modal, Box, Typography, IconButton, CircularProgress } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { IEmployee } from '../models/employee';
+import { getPhoto } from '../store/actions/EmployeeActions';
+import { toast } from 'react-toastify';
 
 interface EmployeeDetailsModalProps {
     open: boolean;
@@ -9,46 +11,41 @@ interface EmployeeDetailsModalProps {
     employee: IEmployee | null;
 }
 
-interface Photo {
-    data: Uint8Array | string;
-    fileName: string;
-}
-
 const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({ open, onClose, employee }) => {
+    const [photoSrc, setPhotoSrc] = useState<string | null>(null);
+    const [loadingPhoto, setLoadingPhoto] = useState(false);
+
+    useEffect(() => {
+        const fetchPhoto = async () => {
+            if (employee?.id) {
+                setLoadingPhoto(true);
+                try {
+                    const photoFile = await getPhoto(employee.id);
+                    const photoUrl = URL.createObjectURL(photoFile);
+                    setPhotoSrc(photoUrl);
+                } catch (error) {
+                    toast.error('Failed to load photo');
+                } finally {
+                    setLoadingPhoto(false);
+                }
+            }
+        };
+
+        if (open) {
+            fetchPhoto();
+        } else {
+            setPhotoSrc(null);
+        }
+
+        return () => {
+            if (photoSrc) {
+                console.log('Revoking URL:', photoSrc);
+                URL.revokeObjectURL(photoSrc);
+            }
+        };
+    }, [open, employee]);
+
     if (!employee) return null;
-
-    const getBase64Image = (bytes: Uint8Array | null, mimeType: string): string | null => {
-        if (!bytes) return null;
-        const binary = Array.from(bytes).reduce((acc, byte) => acc + String.fromCharCode(byte), '');
-        return `data:${mimeType};base64,${window.btoa(binary)}`;
-    };
-
-    const determineMimeType = (fileName: string | undefined): string => {
-        if (!fileName) {
-            return 'application/octet-stream'; // Default MIME type if fileName is undefined
-        }
-        const extension = fileName.split('.').pop()?.toLowerCase();
-        switch (extension) {
-            case 'png': return 'image/png';
-            case 'jpg':
-            case 'jpeg': return 'image/jpeg';
-            case 'gif': return 'image/gif';
-            case 'bmp': return 'image/bmp';
-            default: return 'application/octet-stream';
-        }
-    };
-
-
-    const getPhotoSrc = (photo: Photo): string | null => {
-        if (typeof photo.data === 'string') {
-            return photo.data; // Assuming this is a URL
-        }
-        const mimeType = determineMimeType(photo.fileName);
-        return getBase64Image(new Uint8Array(photo.data), mimeType);
-    };
-
-    const photo = employee.photo;
-    const photoSrc = getPhotoSrc(photo);
 
     return (
         <Modal open={open} onClose={onClose}>
@@ -75,10 +72,16 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({ open, onClo
                 <Typography variant="body1"><strong>Position:</strong> {employee.position}</Typography>
                 <Typography variant="body1"><strong>Status:</strong> {employee.isActive ? 'Active' : 'Inactive'}</Typography>
                 <Typography variant="body1"><strong>Balance:</strong> {employee.outOfOfficeBalance}</Typography>
-                {photoSrc && (
-                    <Box sx={{ mt: 2 }}>
-                        <img src={photoSrc} alt={`${employee.fullName}'s photo`} style={{ width: '100%', borderRadius: '8px' }} />
+                {loadingPhoto ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                        <CircularProgress />
                     </Box>
+                ) : (
+                    photoSrc && (
+                        <Box sx={{ mt: 2 }}>
+                            <img src={photoSrc} alt={`${employee.fullName}'s photo`} style={{ width: '100%', borderRadius: '8px' }} />
+                        </Box>
+                    )
                 )}
             </Box>
         </Modal>
