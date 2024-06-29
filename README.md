@@ -1,6 +1,3 @@
-
-### README для клиента (React + TypeScript)
-
 ```markdown
 # Проект клиента: React + TypeScript
 
